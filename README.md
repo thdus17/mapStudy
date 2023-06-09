@@ -1,2 +1,2 @@
 # mapStudy
-seciumjs study
+cesiumjs study
