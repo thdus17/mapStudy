@@ -10,7 +10,9 @@ window.onload = function() {
 	//내 토큰 추가
 	Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlMDE5YTc2Ni1mNmUxLTRjZDYtYTRiMC03YmNlMDE3MzZhODkiLCJpZCI6MTQ0NTM4LCJpYXQiOjE2ODU5NTEyNzN9.4oC0ZuLdH7F45DKUMsJg7xh-nP3lEkiLg5Q3B0s0ER8';
 	const viewer = new Cesium.Viewer("cesiumContainer");
+	const scene = viewer.scene;
 
+	var searchArea = new Cesium.PrimitiveCollection();
 
 	var CameraUtil = function() { };
 	CameraUtil.flyToNormal = function(xyzArr, callback) {
@@ -33,7 +35,7 @@ window.onload = function() {
 		}
 		//고도가 정의되지 않은 경우 기본 값 지졍
 		else if (!Cesium.defined(tempArray[2])) {
-			tempArray[2] = 800;
+			tempArray[2] = 1000;
 		}
 
 		viewer.camera.flyTo({
@@ -54,6 +56,7 @@ window.onload = function() {
 	//==주소 검색 버튼 클릭 이벤트 등록 START
 	document.getElementById("search-button").addEventListener('click',
 		async function() {
+			searchArea.destroy();
 			var addrDatas = await searchAddr(document.getElementById('search-address').value);
 			console.log("addrDatas");
 			console.log(addrDatas);
@@ -69,8 +72,8 @@ window.onload = function() {
 				copyObj.setAttribute('data-lat', addrDatas[key].lat);
 				copyObj.setAttribute('data-lon', addrDatas[key].lon);
 				copyObj.setAttribute('data-destination', addrDatas[key].destination);
-				areaParent.append(copyObj);
 
+				areaParent.append(copyObj);
 			}
 			console.log(areaParent);
 		});
@@ -89,12 +92,10 @@ window.onload = function() {
 		return resource.fetchJson().then(
 
 			function(results) {
-				var bboxDegrees;
 				var nameList = '';
 				console.log("results");
 				console.log(results);
 				return results.map(function(resultObject) { //$.each 랑 비슷한 역할
-					bboxDegrees = resultObject.boundingbox;
 					nameList = (resultObject.display_name).split(', ');
 					nameList.reverse();
 					var name = '';
@@ -103,9 +104,7 @@ window.onload = function() {
 					}
 					return {
 						displayName: name,
-						destination: Cesium.Rectangle.fromDegrees(
-							bboxDegrees[2], bboxDegrees[0],
-							bboxDegrees[3], bboxDegrees[1]),
+						destination: resultObject.boundingbox,
 						lon: resultObject.lon,
 						lat: resultObject.lat
 					};
@@ -120,13 +119,14 @@ window.onload = function() {
 		var xpos = $eventTarget.attr('data-lon');
 		var ypos = $eventTarget.attr('data-lat');
 		var destination = $eventTarget.attr('data-destination');
-		showPolygon(destination);
+		
+		showBoundary(destination);
 
 		if (xpos === '' || ypos === '') {
 			$.notify("Not a Point of Interest", { type: "toast", color: "#00ff02", blur: 0.2 });
 			return;
 		}
-		var xyzArr = [parseFloat(xpos), parseFloat(ypos), 800];
+		var xyzArr = [parseFloat(xpos), parseFloat(ypos), 1000];
 		CameraUtil.flyToNormal(xyzArr);
 		var areaParent = document.getElementById('result-area');
 		var origin = areaParent.firstElementChild.cloneNode();
@@ -135,10 +135,28 @@ window.onload = function() {
 	});
 	//==주소 클릭 이벤트 END
 
-	//==선택한 주소의 폴리곤 표시하기 START
-	function showPolygon(destination) {
-		
-		
+	//==선택한 주소의 WMS 표시하기 START -> 바운딩 박스로 변경
+	function showBoundary(bboxDegrees) {
+		var bboxList = bboxDegrees.split(',');
+		/*		var BoundingRectangle = Cesium.BoundingRectangle.fromRectangle(destination);*/
+		searchArea = new Cesium.Primitive({
+				geometryInstances: new Cesium.GeometryInstance({
+					geometry: new Cesium.RectangleGeometry({
+						rectangle: Cesium.Rectangle.fromDegrees(
+							bboxList[2], bboxList[0],
+							bboxList[3], bboxList[1]),
+						height: 0,
+						vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
+					}),
+					attributes: {
+						color: new Cesium.ColorGeometryInstanceAttribute(1.0, 0.0, 0.0, 0.3),
+					},
+				}),
+				appearance: new Cesium.PerInstanceColorAppearance(),
+			})
+		scene.primitives.add(
+			searchArea
+		);
 	}
 	//==선택한 주소의 폴리곤 표시하기 END
 
