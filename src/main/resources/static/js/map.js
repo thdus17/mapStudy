@@ -3,6 +3,7 @@
  */
 
 window.onload = function () {
+	let xyArr = {};
     /*	const secretKey = 'fe95f4d500344dd1a9b5';
         const consumerKey = 'ac56635afecd4d59824a';
         var accessTimeout = undefined;
@@ -120,6 +121,9 @@ window.onload = function () {
         var ypos = $eventTarget.attr('data-lat');
         var destination = $eventTarget.attr('data-destination');
 
+        xyArr = dfs_xy_conv("toXY", ypos, xpos);
+        showDefaultWeather(xyArr['x'], xyArr['y']);
+
         showBoundary(destination);
 
         if (xpos === '' || ypos === '') {
@@ -149,7 +153,7 @@ window.onload = function () {
                     vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
                 }),
                 attributes: {
-                    color: new Cesium.ColorGeometryInstanceAttribute(1.0, 0.0, 0.0, 0.3),
+                    color: new Cesium.ColorGeometryInstanceAttribute(1.0, 1.0, 0.0, 0.3),
                 },
             }),
             appearance: new Cesium.PerInstanceColorAppearance(),
@@ -318,7 +322,7 @@ window.onload = function () {
 
                     let nowTime = formattedTime + "00";
                     let timeArr = [];
-                    let weatherArr = ["TMP", "POP", "PCP", "SKY", "PTY", "SNO", "REH"];
+                    let weatherArr = ["TMP", "POP", "PCP", "SKY", "PTY", "SNO", "REH", "VEC", "WSD"]; //VEC pe-is-w-wind-cone 풍향, WSD pe-is-w-wind-2 픙속
                     let time = Number(nowTime);
                     let resArr = new Object();
                     let idx = 0;
@@ -361,7 +365,7 @@ window.onload = function () {
 
                         switch (resArr[key].category) {
                             case 'TMP' :
-                                $("div#" + standard + "-temperature").html("<i class='pe-is-w-thermometer-3 pe-va weather-detail-icon pe-2'></i>" + resArr[key].fcstValue + " ℃");
+                                $("div#" + standard + "-temperature").html("<i class='pe-is-w-thermometer-3 pe-va weather-detail-icon pe-2'></i><div class='weather-detail-icon'>" + resArr[key].fcstValue + " ℃</div>");
                                 break;
                             case 'POP' :
                                 $("div#" + standard + "-probability-of-rain").html("<i class='pe-is-w-umbrella pe-va pop-icon'></i>" + resArr[key].fcstValue + " %");
@@ -395,23 +399,101 @@ window.onload = function () {
                                 break;
                             case 'PCP' :
                                 if (resArr[key].fcstValue === "강수없음") {
-                                    $("div#" + standard + "-amount-of-rain").html("<i class='pe-is-w-drop pe-va weather-detail-icon'></i>0.0 mm");
+                                    $("div#" + standard + "-amount-of-rain").html("<i class='pe-is-w-drop pe-va weather-detail-icon'></i><div class='weather-detail-icon'>0.0 mm</div>");
                                 } else {
-                                    $("div#" + standard + "-amount-of-rain").html("<i class='pe-is-w-drop pe-va weather-detail-icon'></i>" + resArr[key].fcstValue);
+                                    $("div#" + standard + "-amount-of-rain").html("<i class='pe-is-w-drop pe-va weather-detail-icon'></i><div class='weather-detail-icon'>" + resArr[key].fcstValue + "</div>");
                                 }
                                 break;
                             case 'REH' :
-                                $("div#" + standard + "-humidity").html("<i class='pe-is-w-drop-percentage-f pe-va weather-detail-icon'></i>" + resArr[key].fcstValue + " %");
+                                $("div#" + standard + "-humidity").html("<i class='pe-is-w-drop-percentage-f pe-va weather-detail-icon'></i><div class='weather-detail-icon'>" + resArr[key].fcstValue + " %</div>");
                                 break;
                             case 'SNO' :
                                 if (resArr[key].fcstValue === "적설없음") {
-                                    $("div#" + standard + "-amount-of-snow").html("<i class='pe-is-w-snowflake pe-va weather-detail-icon weather-detail-snow'></i>0.0 cm");
+                                    $("div#" + standard + "-amount-of-snow").html("<i class='pe-is-w-snowflake pe-va weather-detail-icon weather-detail-snow'></i><div class='weather-detail-icon'>0.0 cm</div>");
                                 } else {
-                                    $("div#" + standard + "-amount-of-snow").html("<i class='pe-is-w-snowflake pe-va weather-detail-icon weather-detail-snow'></i>" + resArr[key].fcstValue);
+                                    $("div#" + standard + "-amount-of-snow").html("<i class='pe-is-w-snowflake pe-va weather-detail-icon weather-detail-snow'></i><div class='weather-detail-icon'>" + resArr[key].fcstValue +"</div>" );
                                 }
                                 break;
+                            case 'VEC' : //VEC pe-is-w-wind-cone 풍향, WSD pe-is-w-wind-2 픙속
+                                let degree = resArr[key].fcstValue;
+                                let direction = Math.floor((Number(degree) + (22.5*0.5)) /22.5);
+                                console.log(degree);
+                                console.log(direction);
+                                let directionKor = "";
+                                switch (direction) {
+                                    case 0 :
+                                        directionKor = "북"; //N
+                                        break;
+                                    case 1 :
+                                        directionKor = "북북동"; //"NNE"
+                                        break;
+                                    case 2 :
+                                        directionKor = "북동"; //"NE"
+                                        break;
+                                    case 3 :
+                                        directionKor = "동북동"; //"ENE"
+                                        break;
+                                    case 4 :
+                                        directionKor = "동"; //"E"
+                                        break;
+                                    case 5 :
+                                        directionKor = "동남동"; //"ESE"
+                                        break;
+                                    case 6 :
+                                        directionKor = "남동"; //"SE"
+                                        break;
+                                    case 7 :
+                                        directionKor = "남남동"; //"SSE"
+                                        break;
+                                    case 8 :
+                                        directionKor = "남"; //"S"
+                                        break;
+                                    case 9 :
+                                        directionKor = "남남서"; //"SSW"
+                                        break;
+                                    case 10 :
+                                        directionKor = "남서"; //"SW"
+                                        break;
+                                    case 11 :
+                                        directionKor = "서남서"; //"WSW"
+                                        break;
+                                    case 12 :
+                                        directionKor = "서"; //"W"
+                                        break;
+                                    case 13 :
+                                        directionKor = "서북서"; //"WNW"
+                                        break;
+                                    case 14 :
+                                        directionKor = "북서"; //"NW"
+                                        break;
+                                    case 15 :
+                                        directionKor = "북북서"; //"NNW"
+                                        break;
+                                    case 16 :
+                                        directionKor = "북"; //"N"
+                                        break;
+                                }
+                                directionKor += "쪽";
+
+
+                                $("div#" + standard + "-wind-direction").html("<i class='pe-is-w-wind-cone pe-va weather-detail-icon'></i><div class='weather-detail-icon'>" + directionKor +"</div>");
+                                break;
+                            case 'WSD' :
+                                let strong = resArr[key].fcstValue;
+                                let strongKor = "";
+                                if (strong >= 14) {
+                                    strongKor = "매우 강함"
+                                } else if (strong >= 9) {
+                                    strongKor = "강함"
+                                } else if (strong >= 4) {
+                                    strongKor = "약간 강함"
+                                } else if (strong < 4) {
+                                    strongKor = "약함"
+                                }
+                                $("div#" + standard + "-wind-speed").html("<i class='pe-is-w-wind-2 pe-va weather-detail-icon'></i><div class='weather-detail-icon'>" +resArr[key].fcstValue + " m/s</div>");
+                                break;
                         }
-                        $("div#weather-info-" + standard + "-time").html(time.slice(0, 2) + " 시");
+                        $("div#weather-info-" + standard + "-time").html(time.slice(0, 2) + "시");
 
                     }
                 } else {
@@ -439,13 +521,13 @@ window.onload = function () {
 
             // 매시 정각일 때만 showDefaultWeather 함수를 실행
             if (minutes === 0 && seconds === 0) {
-                showDefaultWeather(xyArrGps['x'], xyArrGps['y']);
+                showDefaultWeather(xyArr['x'], xyArr['y']);
             }
         }, 1000); // 1초마다 실행
     }
 
 
-    let xyArr = dfs_xy_conv("toXY", 36.4770253283333, 127.675128746667);
+    xyArr = dfs_xy_conv("toXY", 36.4770253283333, 127.675128746667);
     showDefaultWeather(xyArr['x'], xyArr['y']);
     runDefaultWeatherEveryHour();
 /*xyArrGps = dfs_xy_conv("toXY", 36.4770253283333, 127.675128746667);

@@ -85,11 +85,15 @@ i.weather-icon {
 
 i.weather-detail-icon {
 	font-size: 1.3em;
-	padding-right: 12%;
-	width: 25%;
+	padding-right: 5%;
+	width: 35%;
 }
 i.weather-detail-snow {
-	padding-right: 35%;
+	padding-right: 4%;
+}
+div.weather-detail-icon {
+	width: 50%;
+	display: inline-block;
 }
 #weather-infos-area {
 	position: fixed;
@@ -133,5 +137,10 @@ i.weather-detail-snow {
 
 .fs-4 {
 	font-size: x-large;
+	font-weight: bold;
+}
+
+.fs-5 {
+	font-size: large;
 	font-weight: bold;
 }
