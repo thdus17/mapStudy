@@ -10,7 +10,7 @@ public class basicController {
 		return "index";
 	}
 	
-	@GetMapping("/map")
+	@GetMapping("map")
 	public String map() {
 		return "map";
 	}

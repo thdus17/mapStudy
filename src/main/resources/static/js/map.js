@@ -12,8 +12,6 @@ window.onload = function() {
 	const viewer = new Cesium.Viewer("cesiumContainer");
 	const scene = viewer.scene;
 
-	var searchArea = new Cesium.PrimitiveCollection();
-
 	var CameraUtil = function() { };
 	CameraUtil.flyToNormal = function(xyzArr, callback) {
 		var tempArr = new Array(3);
@@ -56,7 +54,10 @@ window.onload = function() {
 	//==주소 검색 버튼 클릭 이벤트 등록 START
 	document.getElementById("search-button").addEventListener('click',
 		async function() {
-			searchArea.destroy();
+			var entity = viewer.entities.getById("searchEntity");
+			if (entity !== undefined) {
+				viewer.entities.remove(entity);
+			}
 			var addrDatas = await searchAddr(document.getElementById('search-address').value);
 			console.log("addrDatas");
 			console.log(addrDatas);
@@ -79,9 +80,36 @@ window.onload = function() {
 		});
 	//==주소 검색 버튼 클릭 이벤트 등록 END
 
+	//==주소 입력 후 엔터 누를 시 검색 이벤트 등록 START
+	$('#search-address').keypress(function(e) {
+		if (e.keyCode && e.keyCode == 13) {
+			$("#search-button").trigger("click");
+			return false;
+		}
+	});
+	//==주소 입력 후 엔터 누를 시 검색 이벤트 등록 END
+
 	//==주소 검색 결과값 목록 호출 함수 START
 	async function searchAddr(input) {
+		var pattern = /\s/g;   // 공백 체크 정규표현식 - 탭, 스페이스
+		var reverseFlag = true;
 		var queryString = 'https://nominatim.openstreetmap.org/search';
+		
+		if (input.match(pattern)) {
+			var inputArray = input.split(' ');
+
+			for (var n in inputArray) {
+				if (isNaN(n)) {
+					reverseFlag = false;
+					break;
+				}
+			}
+			if (reverseFlag) {
+				input = inputArray[1] + " " + inputArray[0];
+			}
+		}
+
+		
 		var resource = new Cesium.Resource({
 			url: queryString,
 			queryParameters: {
@@ -89,6 +117,7 @@ window.onload = function() {
 				q: input
 			}
 		});
+		console.log(resource);
 		return resource.fetchJson().then(
 
 			function(results) {
@@ -119,15 +148,18 @@ window.onload = function() {
 		var xpos = $eventTarget.attr('data-lon');
 		var ypos = $eventTarget.attr('data-lat');
 		var destination = $eventTarget.attr('data-destination');
-		
+		var addrName = $eventTarget.html();
+		console.log(addrName);
+		$('#search-address').val(addrName);
 		showBoundary(destination);
+
 
 		if (xpos === '' || ypos === '') {
 			$.notify("Not a Point of Interest", { type: "toast", color: "#00ff02", blur: 0.2 });
 			return;
 		}
 		var xyzArr = [parseFloat(xpos), parseFloat(ypos), 1000];
-		CameraUtil.flyToNormal(xyzArr);
+		/*CameraUtil.flyToNormal(xyzArr);*/
 		var areaParent = document.getElementById('result-area');
 		var origin = areaParent.firstElementChild.cloneNode();
 		areaParent.replaceChildren();
@@ -139,26 +171,52 @@ window.onload = function() {
 	function showBoundary(bboxDegrees) {
 		var bboxList = bboxDegrees.split(',');
 		/*		var BoundingRectangle = Cesium.BoundingRectangle.fromRectangle(destination);*/
-		searchArea = new Cesium.Primitive({
-				geometryInstances: new Cesium.GeometryInstance({
-					geometry: new Cesium.RectangleGeometry({
-						rectangle: Cesium.Rectangle.fromDegrees(
-							bboxList[2], bboxList[0],
-							bboxList[3], bboxList[1]),
-						height: 0,
-						vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
-					}),
-					attributes: {
-						color: new Cesium.ColorGeometryInstanceAttribute(1.0, 0.0, 0.0, 0.3),
-					},
+		const rectangle = Cesium.Rectangle.fromDegrees(
+			bboxList[2], bboxList[0],
+			bboxList[3], bboxList[1]
+		);
+
+		viewer.camera.setView({
+			destination: rectangle,
+		});
+
+		// Show the rectangle.  Not required; just for show.
+		viewer.entities.add({
+			id: "searchEntity",
+			rectangle: {
+				coordinates: rectangle,
+				fill: false,
+				outline: true,
+				outlineColor: Cesium.Color.WHITE,
+				outerWidth: 10
+			},
+		});
+
+
+
+		/*searchArea = new Cesium.Primitive({
+			geometryInstances: new Cesium.GeometryInstance({
+				geometry: new Cesium.RectangleGeometry({
+					rectangle: Cesium.Rectangle.fromDegrees(
+						bboxList[2], bboxList[0],
+						bboxList[3], bboxList[1]),
+					height: 0,
+					vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
 				}),
-				appearance: new Cesium.PerInstanceColorAppearance(),
-			})
+				attributes: {
+					color: new Cesium.ColorGeometryInstanceAttribute(1.0, 0.0, 0.0, 0.3),
+				},
+			}),
+			appearance: new Cesium.PerInstanceColorAppearance(),
+		})
 		scene.primitives.add(
 			searchArea
-		);
+		);*/
 	}
 	//==선택한 주소의 폴리곤 표시하기 END
+
+
+
 
 	//==토큰 요청 함수 START
 	/*function getToken() {
