@@ -1,36 +1,78 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<title>Map Service</title>
-<script
-	src="https://cesium.com/downloads/cesiumjs/releases/1.75/Build/Cesium/Cesium.js"></script>
-<link
-	href="https://cesium.com/downloads/cesiumjs/releases/1.106/Build/Cesium/Widgets/widgets.css"
-	rel="stylesheet">
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"
-	integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g="
-	crossorigin="anonymous"></script>
-<link rel="stylesheet" type="text/css" href="/css/map.css">
-<script src="/js/map.js"></script>
+    <title>Map Service</title>
+    <script
+            src="https://cesium.com/downloads/cesiumjs/releases/1.75/Build/Cesium/Cesium.js"></script>
+    <link
+            href="https://cesium.com/downloads/cesiumjs/releases/1.106/Build/Cesium/Widgets/widgets.css"
+            rel="stylesheet">
+    <link rel="stylesheet" href="/img/pe-icon-set-weather/css/pe-icon-set-weather.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"
+            integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g="
+            crossorigin="anonymous"></script>
+    <link rel="stylesheet" type="text/css" href="/css/map.css">
+    <script src="/js/map.js"></script>
 
 </head>
 <body>
-	<div class="cesium-search-area" id="search-area">
-		<input type="text" placeholder="주소를 입력하세요" id="search-address"
-			class="cesium-search-address" ></input>
-		<button type="button" id="search-button" class="cesium-search-button">검색</button>
-		<div id="result-area" class="cesium-result-area">
-			<div class="cesium-result-box disappear"></div>
-		</div>
-	</div>
-
-	<div id="cesiumContainer" class="fullSize"></div>
+<div class="cesium-search-area" id="search-area">
+    <input type="text" placeholder="주소를 입력하세요" id="search-address"
+           class="cesium-search-address"></input>
+    <button type="button" id="search-button" class="cesium-search-button">검색</button>
+    <div id="result-area" class="cesium-result-area">
+        <div class="cesium-result-box disappear"></div>
+    </div>
+</div>
 
 
 
 
+<div class="float-end rounded pb-3" id="weather-infos-area">
+    <!--<div class="h3 content-subject-weather">현재 날씨 <span class="fs-6 ms-3" id="weather-alert-time"><i
+            class="fa-solid fa-circle-exclamation" style="color: #2f89ff;"></i> 기상청 예보 - <span id="weather-standard">nn월 nn일 nn시</span> 기준 </span>
+    </div>-->
+    <div class="mt-3 ps-3 border-end float-start" id="weather-start-info">
+        <div id="weather-info-start-time" class="mb-3 fs-5 ms-3">nn시</div>
+        <div class="text-center weather-top-margin"><i id="weather-start-icon" class="pe-is-w-sun-1 weather-icon mb-2"></i>
+            <div id="start-probability-of-rain" class="weather-top-margin fs-4">강수확률</div>
+        </div>
+        <div id="weather-start-detail" class="mt-3 fs-6 text-center">
+            <div class="float-start weather-top-margin">
+                <!-- <span>강수확률 </span><div id="start-probability-of-rain" class="mb-2">강수확률</div> -->
+                <div id="start-amount-of-rain" class="mb-2 start-amount-of-rain-label">강수량</div>
+                <div id="start-amount-of-snow" class="weather-top-margin start-amount-of-snow-label">적설량</div>
+            </div>
+            <div class="float-end weather-top-margin">
+                <div id="start-temperature" class="mb-2">기온</div>
+                <div id="start-humidity" class="weather-top-margin">습도</div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="mt-3 ps-3 float-end" id="weather-end-info">
+        <div id="weather-info-end-time" class="mb-3 fs-5 ms-3">nn시</div>
+        <div class="text-center weather-top-margin"><i id="weather-end-icon" class="pe-is-w-heavy-rain-night weather-icon mb-2"></i>
+            <div id="end-probability-of-rain" class="weather-top-margin fs-4">강수확률</div>
+        </div>
+        <div id="weather-end-detail" class="text-center">
+            <div class="float-start weather-top-margin">
+                <!-- <span>강수확률 </span><div id="end-probability-of-rain" class="mb-2">강수확률</div> -->
+                <div id="end-amount-of-rain" class="mb-2 end-amount-of-rain-label">강수량</div>
+                <div id="end-amount-of-snow" class="weather-top-margin end-amount-of-snow-label">적설량</div>
+            </div>
+            <div class="float-end weather-top-margin">
+                <div id="end-temperature" class="mb-2">기온</div>
+                <div id="end-humidity" class="weather-top-margin">습도</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="cesiumContainer" class="fullSize"></div>
 
 </body>
 </html>
