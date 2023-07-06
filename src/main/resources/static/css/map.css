@@ -112,6 +112,22 @@ div.weather-detail-icon {
 	border-right-color: #1c273d;
 }
 
+#past-weather-infos-area {
+	position: fixed;
+	background-color: rgba(255, 255, 255, 0.5);
+	color: black;
+	margin-top: 20%;
+	width: 15%;
+	height: 36%;
+	z-index: 10;
+	border: solid white 0px;
+	border-radius: 10px;
+	padding: 1%;
+}
+#past-weather-start-info {
+	border-right-color: #1c273d;
+}
+
 
 .float-start {
 	display: inline-block;

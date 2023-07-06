@@ -312,6 +312,7 @@ window.onload = function () {
         xhr.onload = function () {
             if (xhr.status === 200) {
                 let resObj = JSON.parse(xhr.responseText);
+                console.log(resObj);
                 if (resObj.response.header.resultCode === '00') {
                     let resAll = resObj.response.body.items.item;
                     console.log(resAll);
@@ -398,7 +399,6 @@ window.onload = function () {
                                 }
                                 break;
                             case 'PCP' :
-                                resArr[key].fcstValue = "30.9 mm";
                                 if (resArr[key].fcstValue === "강수없음") {
                                     $("div#" + standard + "-amount-of-rain").html("<i class='pe-is-w-drop pe-va weather-detail-icon'></i><div class='weather-detail-icon'>0.0 mm</div>");
                                 } else {
@@ -409,7 +409,6 @@ window.onload = function () {
                                 $("div#" + standard + "-humidity").html("<i class='pe-is-w-drop-percentage-f pe-va weather-detail-icon'></i><div class='weather-detail-icon'>" + resArr[key].fcstValue + " %</div>");
                                 break;
                             case 'SNO' :
-                                resArr[key].fcstValue = "30.9 cm";
                                 if (resArr[key].fcstValue === "적설없음") {
                                     $("div#" + standard + "-amount-of-snow").html("<i class='pe-is-w-snowflake pe-va weather-detail-icon weather-detail-snow'></i><div class='weather-detail-icon'>0.0 cm</div>");
                                 } else {
@@ -490,7 +489,6 @@ window.onload = function () {
                                 } else if (strong < 4) {
                                     strongKor = "약함"
                                 }
-                                resArr[key].fcstValue = 30.9;
                                 $("div#" + standard + "-wind-speed").html("<i class='pe-is-w-wind-2 pe-va weather-detail-icon'></i><div class='weather-detail-icon'>" +resArr[key].fcstValue + " m/s</div>");
                                 break;
                         }
@@ -580,11 +578,11 @@ window.onload = function () {
     var arr_data = getWeather(yy, mm, stn);
     console.log(JSON.stringify(arr_data));*/
 
-    //  과거 날씨 조회 api
+    //  과거 날씨 조회 api - 날씨 정보 테이블 만들어서 하기, 현재 날씨 Table 추가
     function getOldWeather(stn, day, startTime, endTime) {
         const stnIds = stn === ""?108:stn;
         /*const key = "ZffRhqt27fKalGbMhWpa1df76cufI8qua61HxT7Cp1BsPonXft4Gs2cOFih5EFvcFs2Ce1y6%2B%2F3qXU2QBtLugA%3D%3D";*/
-        let url = "http://apis.data.go.kr/1360000/AsosHourlyInfoService?serviceKey=" + key + "&pageNo=1&numOfRows=3&dataType=JSON&dataCd=ASOS&dateCd=HR&startDt="+day+"&startHh="+startTime+"&endDt="+day+"&endHh="+endTime+"&stnIds="+stnIds;
+        let url = "https://apis.data.go.kr/1360000/AsosHourlyInfoService/getWthrDataList?serviceKey=" + key + "&pageNo=1&numOfRows=3&dataType=JSON&dataCd=ASOS&dateCd=HR&startDt="+day+"&startHh="+startTime+"&endDt="+day+"&endHh="+endTime+"&stnIds="+stnIds;
         let xhr = new XMLHttpRequest();
         xhr.open("GET", url);
         xhr.setRequestHeader('Content-Type', 'text/plain; charset=utf-8');
@@ -593,6 +591,7 @@ window.onload = function () {
                 let resObj = JSON.parse(xhr.responseText);
                 if (resObj.response.header.resultCode === '00') {
                     console.log(resObj);
+
                 }
             };
         };
