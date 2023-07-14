@@ -11,8 +11,9 @@ window.onload = function () {
     //내 토큰 추가
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlMDE5YTc2Ni1mNmUxLTRjZDYtYTRiMC03YmNlMDE3MzZhODkiLCJpZCI6MTQ0NTM4LCJpYXQiOjE2ODU5NTEyNzN9.4oC0ZuLdH7F45DKUMsJg7xh-nP3lEkiLg5Q3B0s0ER8';
     const viewer = new Cesium.Viewer("cesiumContainer");
-    const scene = viewer.scene;
 
+    const scene = viewer.scene;
+    scene.globe.depthTestAgainstTerrain = true;
     var searchArea = new Cesium.PrimitiveCollection();
 
     var CameraUtil = function () {
@@ -55,13 +56,17 @@ window.onload = function () {
             }
         });
     }
+    /**
+     *  화면 우측 상단 주소 검색창 이벤트
+     */
     //==주소 검색 버튼 클릭 이벤트 등록 START
     document.getElementById("search-button").addEventListener('click',
-        async function () {
-            searchArea.destroy();
+        async function() {
+            var entity = viewer.entities.getById("searchEntity");
+            /*if (entity !== undefined) {
+                viewer.entities.remove(entity);
+            }*/
             var addrDatas = await searchAddr(document.getElementById('search-address').value);
-            console.log("addrDatas");
-            console.log(addrDatas);
 
             var areaParent = document.getElementById('result-area');
             var origin = areaParent.firstElementChild.cloneNode();
@@ -81,9 +86,36 @@ window.onload = function () {
         });
     //==주소 검색 버튼 클릭 이벤트 등록 END
 
+    //==주소 입력 후 엔터 누를 시 검색 이벤트 등록 START
+    $('#search-address').keypress(function(e) {
+        if (e.keyCode && e.keyCode == 13) {
+            $("#search-button").trigger("click");
+            return false;
+        }
+    });
+    //==주소 입력 후 엔터 누를 시 검색 이벤트 등록 END
+
     //==주소 검색 결과값 목록 호출 함수 START
     async function searchAddr(input) {
+        var pattern = /\s/g;   // 공백 체크 정규표현식 - 탭, 스페이스
+        var reverseFlag = true;
         var queryString = 'https://nominatim.openstreetmap.org/search';
+
+        if (input.match(pattern)) {
+            var inputArray = input.split(' ');
+
+            for (var n in inputArray) {
+                if (isNaN(n)) {
+                    reverseFlag = false;
+                    break;
+                }
+            }
+            if (reverseFlag) {
+                input = inputArray[1] + " " + inputArray[0];
+            }
+        }
+
+
         var resource = new Cesium.Resource({
             url: queryString,
             queryParameters: {
@@ -91,12 +123,14 @@ window.onload = function () {
                 q: input
             }
         });
+        console.log(resource);
         return resource.fetchJson().then(
-            function (results) {
+
+            function(results) {
                 var nameList = '';
                 console.log("results");
                 console.log(results);
-                return results.map(function (resultObject) { //$.each 랑 비슷한 역할
+                return results.map(function(resultObject) { //$.each 랑 비슷한 역할
                     nameList = (resultObject.display_name).split(', ');
                     nameList.reverse();
                     var name = '';
@@ -115,23 +149,17 @@ window.onload = function () {
     //==주소 검색 결과값 목록 호출 함수 END
 
     //==주소 클릭 이벤트 START
-    $(document).on('click', 'div.cesium-result-box', function (e) {
+    $(document).on('click', 'div.cesium-result-box', function(e) {
         var $eventTarget = $(e.target) //127 x(경도) 36 y(위도)
         var xpos = $eventTarget.attr('data-lon');
         var ypos = $eventTarget.attr('data-lat');
         var destination = $eventTarget.attr('data-destination');
-
-        xyArr = dfs_xy_conv("toXY", ypos, xpos);
-        showDefaultWeather(xyArr['x'], xyArr['y']);
+        var addrName = $eventTarget.html();
+        console.log(addrName);
+        $('#search-address').val(addrName);
 
         showBoundary(destination);
 
-        if (xpos === '' || ypos === '') {
-            $.notify("Not a Point of Interest", {type: "toast", color: "#00ff02", blur: 0.2});
-            return;
-        }
-        var xyzArr = [parseFloat(xpos), parseFloat(ypos), 1000];
-        CameraUtil.flyToNormal(xyzArr);
         var areaParent = document.getElementById('result-area');
         var origin = areaParent.firstElementChild.cloneNode();
         areaParent.replaceChildren();
@@ -139,31 +167,90 @@ window.onload = function () {
     });
     //==주소 클릭 이벤트 END
 
-    //==선택한 주소의 WMS 표시하기 START -> 바운딩 박스로 변경
+    //==선택한 주소의 바운딩 박스 표시하기 START
     function showBoundary(bboxDegrees) {
         var bboxList = bboxDegrees.split(',');
         /*		var BoundingRectangle = Cesium.BoundingRectangle.fromRectangle(destination);*/
-        searchArea = new Cesium.Primitive({
-            geometryInstances: new Cesium.GeometryInstance({
-                geometry: new Cesium.RectangleGeometry({
-                    rectangle: Cesium.Rectangle.fromDegrees(
-                        bboxList[2], bboxList[0],
-                        bboxList[3], bboxList[1]),
-                    height: 0,
-                    vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
-                }),
-                attributes: {
-                    color: new Cesium.ColorGeometryInstanceAttribute(1.0, 1.0, 0.0, 0.3),
-                },
-            }),
-            appearance: new Cesium.PerInstanceColorAppearance(),
-        })
-        scene.primitives.add(
-            searchArea
+        const rectangle = Cesium.Rectangle.fromDegrees(
+            bboxList[2], bboxList[0],
+            bboxList[3], bboxList[1]
         );
+        // Show the rectangle.  Not required; just for show.
+        viewer.entities.add({
+/*            id: "searchEntity",*/
+            rectangle: {
+                coordinates: rectangle,
+                material: Cesium.Color.WHITE.withAlpha(0.3)
+                /*fill: false,
+                outline: true,
+                outlineColor: Cesium.Color.WHITE*/
+            },
+        });
+        viewer.camera.setView({
+            destination: rectangle
+        });
     }
+    //==선택한 주소의 바운딩 박스 표시하기 END
 
-    //==선택한 주소의 폴리곤 표시하기 END
+
+    //geoServer의 wms 로드해서 보여주기
+    function showWms() {
+        var imageryProvider = new Cesium.WebMapServiceImageryProvider({
+            url: 'http://175.116.181.30:8090/geoserver/wms',
+            layers: 'sig',
+            parameters: {
+                transparent: 'true',
+                format: 'image/png',
+                CQL_FILTER : "SIG_KOR_NM LIKE '용인시%'"
+            }
+        });
+        var imageryLayer = viewer.imageryLayers.addImageryProvider(imageryProvider);
+    }
+    showWms();
+
+    var imageryProvider22
+    // function showWMSNotFlyingArea() {
+        let data = "SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&LAYERS=lt_c_aisuac,lt_c_aisaltc,lt_c_aisfldc&STYLES=lt_c_aisuac,lt_c_aisaltc,lt_c_aisfldc&CRS=EPSG:4326&BBOX=126.51704986130812,36.89377501638313,127.84811314551632,38.24234375366507&WIDTH=256&HEIGHT=256&FORMAT=image/png&TRANSPARENT=false&BGCOLOR=0xFFFFFF&EXCEPTIONS=text/xml&KEY=607881A5-BDAE-3E58-90EB-76544C8195D9&DOMAIN=http://175.116.181.30";
+        $.ajax({
+            url: 'http://api.vworld.kr/req/wms',
+            method: 'GET',
+            data: data,
+            dataType: 'jsonp',
+            async: false,
+            jsonpCallback:"myCallback",
+            success: callback
+            /*jsonpCallback:"parseResponse",
+            success: function(response) {
+                imageryProvider22 = response;
+                var imageryLayer = viewer.imageryLayers.addImageryProvider(imageryProvider22);
+            },
+            error: function(xhr, status, error) {
+                console.log('통신 실패');
+            }*/
+        });
+    // }
+
+    // $.getJSON(url + "?callback=?", data, callback);
+
+    function showWMSNotFlyingArea1() {
+        var imageryProviderEx = new Cesium.WebMapServiceImageryProvider({
+            url: 'http://api.vworld.kr/req/wms?',
+            parameters: {
+                REQUEST: 'GetMap',
+                layers: 'lt_c_aisuac',
+                STYLES: 'lt_c_aisuac',
+                KEY: '607881A5-BDAE-3E58-90EB-76544C8195D9',
+                DOMAIN:"http://175.116.181.30",
+                FORMAT: "image/png",
+                WIDTH:512,
+                HEIGHT:512,
+                BBOX:"33,124,43,132",
+                server: "http://175.116.181.30"
+            }
+        });
+        var imageryLayerEx = viewer.imageryLayers.addImageryProvider(imageryProviderEx);
+    }
+    showWMSNotFlyingArea1();
 
     //==토큰 요청 함수 START
     /*function getToken() {
